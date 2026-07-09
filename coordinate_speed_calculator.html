@@ -1,0 +1,70 @@
+<h2 class="sr-only">Calculator converting a change in GPS coordinates per update into a real-world speed</h2>
+<div style="display: flex; flex-direction: column; gap: 1rem; max-width: 420px;">
+  <div>
+    <label style="font-size: 14px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Coordinate delta per update (degrees)</label>
+    <input type="number" id="delta" value="0.000001" step="0.0000001" style="width: 100%;" />
+  </div>
+  <div>
+    <label style="font-size: 14px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Update rate (Hz)</label>
+    <input type="number" id="hz" value="30" step="1" style="width: 100%;" />
+  </div>
+  <div>
+    <label style="font-size: 14px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Axis</label>
+    <select id="axis" style="width: 100%;">
+      <option value="lat">Latitude (constant scale)</option>
+      <option value="lon">Longitude (scales with latitude)</option>
+    </select>
+  </div>
+  <div id="lat-row">
+    <label style="font-size: 14px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Latitude (degrees, for longitude scaling)</label>
+    <input type="range" id="lat" min="0" max="89" value="0" step="1" style="width: 100%;" />
+    <span id="lat-out" style="font-size: 13px; color: var(--text-muted);">0 degrees</span>
+  </div>
+
+  <div style="background: var(--surface-1); border-radius: var(--radius); padding: 1rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">m/s</p>
+      <p style="font-size: 22px; font-weight: 500; margin: 0;" id="out-ms">0</p>
+    </div>
+    <div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">km/h</p>
+      <p style="font-size: 22px; font-weight: 500; margin: 0;" id="out-kmh">0</p>
+    </div>
+    <div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">mph</p>
+      <p style="font-size: 22px; font-weight: 500; margin: 0;" id="out-mph">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const deltaEl = document.getElementById('delta');
+const hzEl = document.getElementById('hz');
+const axisEl = document.getElementById('axis');
+const latEl = document.getElementById('lat');
+const latOut = document.getElementById('lat-out');
+const latRow = document.getElementById('lat-row');
+const METERS_PER_DEG = 111320;
+
+function update() {
+  const delta = parseFloat(deltaEl.value) || 0;
+  const hz = parseFloat(hzEl.value) || 0;
+  const axis = axisEl.value;
+  const lat = parseFloat(latEl.value) || 0;
+  latOut.textContent = lat + ' degrees';
+  latRow.style.display = axis === 'lon' ? 'block' : 'none';
+
+  const scale = axis === 'lon' ? Math.cos(lat * Math.PI / 180) : 1;
+  const metersPerUpdate = delta * METERS_PER_DEG * scale;
+  const ms = metersPerUpdate * hz;
+  const kmh = ms * 3.6;
+  const mph = ms * 2.23694;
+
+  document.getElementById('out-ms').textContent = ms.toFixed(3);
+  document.getElementById('out-kmh').textContent = kmh.toFixed(2);
+  document.getElementById('out-mph').textContent = mph.toFixed(2);
+}
+
+[deltaEl, hzEl, axisEl, latEl].forEach(el => el.addEventListener('input', update));
+update();
+</script>
